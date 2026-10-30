@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Home AI Security & Access Monitoring</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="shield-badge" style="width: 38px; height: 38px; margin: 0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+        </div>
+        <div>
+          <h1>Smart Home AI</h1>
+          <p style="font-size: 0.72rem; color: var(--text-muted);">Access Monitoring</p>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a class="nav-item active" data-tab="dashboard">Dashboard</a>
+        <a class="nav-item" data-tab="camera">Live Monitoring</a>
+        <a class="nav-item" data-tab="faces">Face Registration</a>
+        <a class="nav-item" data-tab="history">Access History</a>
+        <a class="nav-item" data-tab="alerts">
+          <span>Security Alerts</span>
+          <span id="alerts-badge" class="hidden" style="margin-left: auto; background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: bold;">0</span>
+        </a>
+        <a class="nav-item" data-tab="assistant">AI Assistant</a>
+        <a class="nav-item" data-tab="settings">Settings</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <p style="font-size: 0.75rem; color: var(--text-muted);">Admin User</p>
+            <p id="current-username" style="font-size: 0.85rem; font-weight: 600; color: #fff;">admin</p>
+          </div>
+          <button id="logout-btn" class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.78rem;">Logout</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Top Bar -->
+      <header class="top-bar">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="status-pill">
+            <span class="pulse-dot"></span>
+            <span id="camera-status-text">SYSTEM OBSERVING</span>
+          </div>
+          <span style="font-size: 0.75rem; color: var(--text-muted);" class="desktop-only">
+            Presence Observation System &bull; Does not control doors
+          </span>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button id="mute-toggle-btn" class="btn btn-secondary" style="font-size: 0.78rem; padding: 6px 12px;">
+            Audio Alert: ON
+          </button>
+        </div>
+      </header>
+
+      <!-- Content Views Container -->
+      <div class="content-body">
+        <!-- Dashboard Tab -->
+        <section id="tab-dashboard" class="tab-pane active">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <div class="auth-card" style="max-width: 100%; padding: 20px;">
+              <p style="font-size: 0.78rem; color: var(--text-muted);">Total Observed Events</p>
+              <h3 id="stat-total" style="font-size: 1.8rem; font-weight: 700; margin-top: 4px;">0</h3>
+            </div>
+            <div class="auth-card" style="max-width: 100%; padding: 20px;">
+              <p style="font-size: 0.78rem; color: var(--text-muted);">Authorized Visits</p>
+              <h3 id="stat-auth" style="font-size: 1.8rem; font-weight: 700; color: var(--success); margin-top: 4px;">0</h3>
+            </div>
+            <div class="auth-card" style="max-width: 100%; padding: 20px;">
+              <p style="font-size: 0.78rem; color: var(--text-muted);">Unknown Visitors</p>
+              <h3 id="stat-unknown" style="font-size: 1.8rem; font-weight: 700; color: var(--danger); margin-top: 4px;">0</h3>
+            </div>
+            <div class="auth-card" style="max-width: 100%; padding: 20px;">
+              <p style="font-size: 0.78rem; color: var(--text-muted);">Pending Alerts</p>
+              <h3 id="stat-alerts" style="font-size: 1.8rem; font-weight: 700; color: var(--warning); margin-top: 4px;">0</h3>
+            </div>
+          </div>
+
+          <div style="background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px;">
+            <h4 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 16px;">Presence Activity Timeline (7 Days)</h4>
+            <div style="height: 240px; position: relative;">
+              <canvas id="timelineChart"></canvas>
+            </div>
+          </div>
+        </section>
+
+        <!-- Live Monitoring Tab -->
+        <section id="tab-camera" class="tab-pane hidden">
+          <div style="background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: var(--radius-lg); padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <h3 style="font-size: 1rem; font-weight: 600;">Real-time Computer Vision Stream</h3>
+              <div style="display: flex; gap: 8px;">
+                <button id="start-cam-btn" class="btn btn-primary" style="font-size: 0.8rem;">Start Camera</button>
+                <button id="stop-cam-btn" class="btn btn-danger" style="font-size: 0.8rem;">Stop Camera</button>
+              </div>
+            </div>
+
+            <div style="background: #000; border-radius: var(--radius-md); overflow: hidden; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; position: relative;">
+              <img id="live-stream-img" src="/api/camera/feed" alt="Live Camera Feed" style="width: 100%; height: 100%; object-fit: contain;">
+            </div>
+          </div>
+        </section>
+
+        <!-- History Tab -->
+        <section id="tab-history" class="tab-pane hidden">
+          <div style="background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: var(--radius-lg); padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <h3 style="font-size: 1rem; font-weight: 600;">Observed Presence Events</h3>
+              <a href="/api/visitors/export" class="btn btn-secondary" style="font-size: 0.8rem; text-decoration: none;">Export CSV</a>
+            </div>
+            <div id="history-table-container">Loading records...</div>
+          </div>
+        </section>
+
+        <!-- Alerts Tab -->
+        <section id="tab-alerts" class="tab-pane hidden">
+          <div style="background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: var(--radius-lg); padding: 20px;">
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 16px;">Security Alerts Feed</h3>
+            <div id="alerts-feed-container">Loading alerts...</div>
+          </div>
+        </section>
+
+        <!-- Assistant Tab -->
+        <section id="tab-assistant" class="tab-pane hidden">
+          <div style="background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: var(--radius-lg); padding: 20px; max-width: 700px;">
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 12px;">Gemini Security Assistant</h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 16px;">
+              Ask questions about visitor trends and security alerts based on your local database records.
+            </p>
+            <div id="assistant-chat-log" style="height: 300px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: var(--radius-md); padding: 12px; margin-bottom: 12px; font-size: 0.85rem;"></div>
+            <form id="assistant-form" style="display: flex; gap: 8px;">
+              <input type="text" id="assistant-input" placeholder="e.g. How many unknown visitors were observed yesterday?" style="flex: 1; padding: 10px; border-radius: var(--radius-md); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; outline: none;">
+              <button type="submit" class="btn btn-primary">Ask AI</button>
+            </form>
+          </div>
+        </section>
+
+        <!-- Settings Tab -->
+        <section id="tab-settings" class="tab-pane hidden">
+          <div style="background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: var(--radius-lg); padding: 24px; max-width: 600px;">
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 20px;">System Detection Parameters</h3>
+            <form id="settings-form" style="display: flex; flex-direction: column; gap: 16px;">
+              <div class="form-group" style="margin: 0;">
+                <label>Person Detection Threshold (0.1 - 0.95)</label>
+                <input type="number" id="set-det-thresh" step="0.05" min="0.1" max="0.95" required>
+              </div>
+              <div class="form-group" style="margin: 0;">
+                <label>Face Recognition Cosine Threshold (0.3 - 0.95)</label>
+                <input type="number" id="set-rec-thresh" step="0.05" min="0.3" max="0.95" required>
+              </div>
+              <div class="form-group" style="margin: 0;">
+                <label>Event Cooldown Seconds (5 - 600)</label>
+                <input type="number" id="set-cooldown" min="5" max="600" required>
+              </div>
+              <button type="submit" class="btn btn-primary" style="margin-top: 8px;">Save Settings</button>
+            </form>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>

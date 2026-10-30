@@ -1,0 +1,43 @@
+# Environment Variables
+.env
+.env.local
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Local captured snapshots & biometric images
+captured_images/*
+!captured_images/.gitkeep
+
+# Downloaded AI weights & checkpoints
+models/*.pt
+models/*.onnx
+models/*.engine
+models/*.bin
+!models/.gitkeep
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+venv/
+.venv/
+
+# Node & Frontend artifacts
+node_modules/
+.playwright-cli/
+dist/
+.vite/
+
+# System / OS
+.DS_Store
+Thumbs.db

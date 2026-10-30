@@ -1,0 +1,10 @@
+{
+  "name": "Smart Home AI Security & Access Monitoring",
+  "description": "Intelligent home security monitoring system using AI person detection, face recognition, and optional Gemini assistant.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

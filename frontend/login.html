@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Smart Home AI Security</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="auth-body">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="shield-badge">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+      </div>
+      <h2>Security Access Terminal</h2>
+      <p class="auth-sub">Smart Home Monitoring & Presence System</p>
+    </div>
+
+    <form id="login-form" class="auth-form">
+      <div id="auth-alert" class="alert-box hidden" role="alert"></div>
+
+      <div class="form-group">
+        <label for="username">Admin Username</label>
+        <input type="text" id="username" name="username" placeholder="Enter username" required autofocus autocomplete="username">
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Enter secure password" required autocomplete="current-password">
+      </div>
+
+      <button type="submit" id="login-btn" class="btn btn-primary btn-block">
+        <span class="btn-text">Sign In to Dashboard</span>
+        <span class="btn-spinner hidden"></span>
+      </button>
+
+      <div class="legal-notice">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        <span>Monitors presence events only. Observe legal privacy compliance in monitored zones.</span>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById('login-form');
+    const alertBox = document.getElementById('auth-alert');
+    const btn = document.getElementById('login-btn');
+    const btnText = btn.querySelector('.btn-text');
+    const spinner = btn.querySelector('.btn-spinner');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      alertBox.classList.add('hidden');
+      btn.disabled = true;
+      btnText.textContent = "Verifying Credentials...";
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            username: form.username.value.trim(),
+            password: form.password.value
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          window.location.href = '/';
+        } else {
+          alertBox.textContent = data.message || "Invalid credentials";
+          alertBox.classList.remove('hidden');
+        }
+      } catch (err) {
+        alertBox.textContent = "Network error connecting to backend server.";
+        alertBox.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = "Sign In to Dashboard";
+      }
+    });
+  </script>
+</body>
+</html>
